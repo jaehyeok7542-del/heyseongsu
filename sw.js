@@ -3,12 +3,12 @@
    한 번 열어보면 파일들이 저장돼서, 다음엔 더 빨리 열려요.
    ★ 코드를 고쳤다면 아래 VERSION 숫자를 올려야 폰이 새 파일을 받아가요!
    ===================================================== */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = 'heyseongsu-' + VERSION;
 const FILES = [
   './', 'index.html', 'manifest.json', 'css/style.css',
   'js/config.js', 'js/data.js', 'js/rules.js', 'js/ui.js', 'js/home.js',
-  'js/advertiser.js', 'js/admin.js', 'js/tourist.js', 'js/main.js',
+  'js/advertiser.js', 'js/assist.js', 'js/admin.js', 'js/tourist.js', 'js/main.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 

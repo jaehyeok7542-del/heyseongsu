@@ -289,7 +289,7 @@ SCREENS['adv-result'] = function (root) {
 SCREENS['adv-done'] = function (root, p) {
   const list = Store.all().filter(s => !s.superseded);
   const steps = ['접수됨', '확인 중', '결과'];
-  const stepIndex = { received: 0, checking: 1, approved: 2, rejected: 2 };
+  const stepIndex = { received: 0, checking: 1, approved: 2, rejected: 2, held: 2 };
 
   const card = s => {
     const b = getBuilding(s.buildingId);
@@ -308,6 +308,8 @@ SCREENS['adv-done'] = function (root, p) {
         ${s.status === 'approved' ? `<p class="note-ok">승인됐어요! ${s.excellent
           ? '🏆 <b>우수 광고</b>로 선정됐어요. 성동구청 홍보 채널에 소개될 수 있어요 (안).' : ''}</p>` : ''}
         ${s.status === 'rejected' ? `<p class="note-bad">반려 이유: ${esc(s.rejectReason)}</p>
+          <button class="btn secondary small-btn" data-resubmit="${s.id}">수정해서 다시 제출</button>` : ''}
+        ${s.status === 'held' ? `<p class="note-hold">보류됐어요. 구청 의견: ${esc(s.rejectReason)}</p>
           <button class="btn secondary small-btn" data-resubmit="${s.id}">수정해서 다시 제출</button>` : ''}
       </article>`;
   };

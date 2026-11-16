@@ -52,7 +52,7 @@ const Store = {
     const list = this.all();
     sub.id = 's' + Date.now();
     sub.createdAt = Date.now();
-    sub.status = 'received';   // received(접수됨) → checking(확인 중) → approved / rejected
+    sub.status = 'received';   // received(접수됨) → checking(확인 중) → approved / held(보류) / rejected
     sub.rejectReason = '';
     sub.excellent = false;     // 우수 광고 선정 여부
     list.unshift(sub);
@@ -80,6 +80,7 @@ const STATUS_LABEL = {
   checking: '확인 중',
   approved: '승인',
   rejected: '반려',
+  held: '보류',
 };
 
 // 사진을 작게 줄여서 저장하기 (너무 크면 저장이 안 돼요)

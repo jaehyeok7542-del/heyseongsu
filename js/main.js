@@ -12,7 +12,7 @@ go('home');
 
 // 다른 탭/창에서 제출 내역이 바뀌면 구청 목록을 자동으로 새로고침
 window.addEventListener('storage', () => {
-  if (App.current === 'admin-list' || App.current === 'adv-done') go(App.current, App.params);
+  if (App.current === 'admin-list' || App.current === 'adv-done' || App.current === 'admin-model') go(App.current, App.params);
 });
 
 // PWA: 서비스 워커 등록 (https 또는 localhost에서만 작동해요)

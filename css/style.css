@@ -207,3 +207,58 @@ body.mode-admin #app { max-width: 1100px; box-shadow: none; background: #eef0f4;
 .done-box { padding: 14px; border-radius: 12px; margin-top: 16px; }
 .done-box.approved { background: var(--ok-bg); color: var(--ok); } .done-box.rejected { background: var(--bad-bg); color: var(--bad); }
 body.mode-admin .toast { bottom: 30px; }
+
+/* =====================================================
+   보류 상태 · 판단 보조 모델
+   ===================================================== */
+.badge.held { background: var(--check-bg); color: var(--check); }
+.note-hold { margin-top: 10px; color: var(--check); font-size: 14px; }
+.done-box.held { background: var(--check-bg); color: var(--check); margin: 16px 0 4px; }
+.btn.hold { flex: 1; background: var(--check); color: #fff; }
+.actions.three .btn { padding: 14px 10px; }
+.a-top-text { flex: 1; min-width: 0; }
+.a-top-btn { background: rgba(255,255,255,.12); color: #fff; padding: 8px 12px; border-radius: 10px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.a-top-btn:hover { background: rgba(255,255,255,.22); }
+.d-info h3 small, .d-info h4 small { font-weight: 400; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 7px 12px; border-radius: 18px; background: #fff; border: 1px solid #d5dae3; font-size: 13.5px; }
+.chip.on { background: #16233f; color: #fff; border-color: #16233f; }
+.chip:disabled { opacity: .7; cursor: default; }
+.note { width: 100%; margin-top: 10px; padding: 10px 12px; border: 1px solid #d5dae3; border-radius: 10px; font: inherit; resize: vertical; }
+
+.assist { margin: 18px 0 4px; background: #f4f1ff; border: 1px solid #d9d0f5; border-radius: 12px; }
+.assist summary { padding: 12px 14px; font-weight: 700; cursor: pointer; list-style-position: inside; }
+.assist summary small { font-weight: 500; }
+.assist-body { padding: 0 14px 14px; }
+.assist h4 { font-size: 14px; margin: 10px 0 6px; }
+.conf { font-weight: 700; padding: 1px 7px; border-radius: 8px; font-size: 12px; }
+.conf.low { background: #eceef2; color: #555; } .conf.mid { background: var(--check-bg); color: var(--check); } .conf.high { background: var(--ok-bg); color: var(--ok); }
+.prob { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+.prob-row { display: grid; grid-template-columns: 40px 1fr 44px; align-items: center; gap: 8px; font-size: 13.5px; }
+.prob-row.top { font-weight: 700; }
+.prob-row i { height: 10px; background: #fff; border-radius: 6px; overflow: hidden; display: block; }
+.prob-row i b { display: block; height: 100%; }
+.prob-row i b.ok { background: var(--ok); } .prob-row i b.check { background: var(--check); } .prob-row i b.bad { background: var(--bad); }
+.prob-row em { font-style: normal; text-align: right; }
+.sim-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.sim-list li { display: flex; gap: 10px; align-items: flex-start; background: #fff; border-radius: 10px; padding: 8px 10px; }
+.sim-list li div { min-width: 0; } .sim-list b { font-size: 14px; } .sim-list small { display: block; }
+
+.m-intro { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #d5dae3; }
+.m-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-bottom: 14px; }
+.m-card { background: #fff; border: 1px solid #d5dae3; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.m-grid .m-card { margin-bottom: 0; }
+.m-card h3 { font-size: 16px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.m-card h4 { font-size: 14px; margin: 12px 0 6px; }
+.m-stats { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; gap: 6px; margin-bottom: 10px; }
+.m-stats b { display: block; font-size: 22px; } .t-ok { color: var(--ok); } .t-check { color: var(--check); } .t-bad { color: var(--bad); }
+.imp { list-style: none; padding: 0; font-size: 13.5px; }
+.imp li { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.imp em { font-style: normal; font-weight: 600; white-space: nowrap; }
+.curve { display: flex; align-items: flex-end; gap: 8px; height: 150px; padding-top: 20px; overflow-x: auto; }
+.bar-col { flex: 0 0 48px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; font-size: 11.5px; }
+.bar-col i { width: 28px; background: #6b5bd2; border-radius: 6px 6px 0 0; display: block; }
+.bar-col em { font-style: normal; font-weight: 700; order: -1; margin-bottom: 2px; }
+.m-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.m-actions .btn { font-size: 14px; padding: 10px 14px; cursor: pointer; }
+@media (max-width: 600px) { .a-top-btn { font-size: 12.5px; padding: 6px 8px; } }
