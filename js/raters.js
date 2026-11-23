@@ -207,8 +207,10 @@ const Rater = {
      팀원 모두의 기기에 "똑같은" 신청 20건을 넣어요. 각자 판단 → 백업(JSON) 내려받기 →
      한 사람이 모두 불러오면 같은 사례끼리 묶여서 일치도가 나와요. */
   loadCommonSet(count = 20) {
-    const list = Store.all();
-    if (list.some(s => s.common)) return 0;
+    let list = Store.all();
+    // 예전 세트(현수막 포함)라 20건이 안 되면 공통 사례만 지우고 새로 넣어요
+    if (list.filter(s => s.common).length >= count) return 0;
+    list = list.filter(s => !s.common);
     const base = makeSampleCases(Math.ceil(count / 2)).slice(0, count);
     base.forEach((c, i) => {
       const b = getBuilding(c.buildingId);

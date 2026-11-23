@@ -3,7 +3,7 @@
    한 번 열어보면 파일들이 저장돼서, 다음엔 더 빨리 열려요.
    ★ 코드를 고쳤다면 아래 VERSION 숫자를 올려야 폰이 새 파일을 받아가요!
    ===================================================== */
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE = 'heyseongsu-' + VERSION;
 const FILES = [
   './', 'index.html', 'manifest.json', 'css/style.css',
