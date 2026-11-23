@@ -262,3 +262,11 @@ body.mode-admin .toast { bottom: 30px; }
 .m-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .m-actions .btn { font-size: 14px; padding: 10px 14px; cursor: pointer; }
 @media (max-width: 600px) { .a-top-btn { font-size: 12.5px; padding: 6px 8px; } }
+
+/* ---------- 판단자 기능 (raters.js) ---------- */
+.rater-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
+  margin: 14px 0 4px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; font-size: 14px; background: #fff; }
+.rater-bar small { color: var(--muted); }
+.rater-bar .link-btn { margin-top: 0; }
+.vs { margin: 6px 0 4px; }
+.vs .prob-row span { min-width: 76px; white-space: nowrap; }

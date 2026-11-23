@@ -111,8 +111,11 @@ SCREENS['admin-detail'] = function (root, p) {
   const t = AD_TYPES[s.kind];
   const vd = VERDICT[s.diagnosis];
   const mark = { ok: '✓', bad: '✗', unknown: '?' };
-  const finished = s.status === 'approved' || s.status === 'rejected';
-  const prev = CaseBook.bySubmission(s.id);
+  const R = typeof Rater !== 'undefined' && Rater.on ? Rater : null;   // 판단자 기능 (raters.js)
+  const me = R ? R.id() : undefined;
+  const prev = CaseBook.bySubmission(s.id, me);                        // 판단자 기능이 켜져 있으면 "내" 판단만
+  // 판단자 기능이 켜져 있으면, 내가 아직 판단하지 않은 사례는 다른 사람이 끝냈어도 판단할 수 있어요
+  const finished = (s.status === 'approved' || s.status === 'rejected') && (!R || !!prev);
   const photoTags = new Set(prev ? prev.photoTags : []);
   const reasons = new Set(prev ? prev.reasons : []);
 
@@ -143,6 +146,7 @@ SCREENS['admin-detail'] = function (root, p) {
           </div>
 
           <div id="assist-slot"></div>
+          ${R ? R.barHTML() : ''}
 
           ${finished ? `
             <div class="done-box ${s.status}">
@@ -176,6 +180,7 @@ SCREENS['admin-detail'] = function (root, p) {
     if (open) $('#assist', root).open = true;
   };
   renderAssist();
+  if (R) R.bindBar(root, () => go('admin-detail', { id: s.id }));
 
   if (finished) return;
 
@@ -202,6 +207,7 @@ SCREENS['admin-detail'] = function (root, p) {
       decision: dec, reasons: why, note,
       assistGuess: lastAssist && lastAssist.guess,              // 판단 전에 모델이 뭐라고 했는지
       assistViewed: !!($('#assist', root) && $('#assist', root).open),
+      ...(R ? { raterId: me, itemKey: R.itemKey(s) } : {}),       // 판단자 코드 (이름 아님)
     });
     go('admin-list');
     toast(`처리됐어요 (${DECISION_LABEL[dec]})`);
@@ -247,6 +253,8 @@ SCREENS['admin-model'] = function (root) {
 
       <div class="m-grid">${kindBlock('sign')}${kindBlock('banner')}</div>
 
+      ${typeof Rater !== 'undefined' && Rater.on ? Rater.panelHTML() : ''}
+
       <section class="m-card">
         <h3>점점 맞아지고 있나요?</h3>
         <p class="muted small">판단하기 전 보조 모델의 추천과 실제 판단이 같았던 비율 (10건씩 묶음)</p>
@@ -271,6 +279,7 @@ SCREENS['admin-model'] = function (root) {
     </main>`;
 
   $$('[data-csv]', root).forEach(b => b.addEventListener('click', () => exportCSV(b.dataset.csv)));
+  if (typeof Rater !== 'undefined' && Rater.on) Rater.bindPanel(root);
   $('#ex-json', root).addEventListener('click', exportJSON);
   $('#im-json', root).addEventListener('change', async e => {
     const f = e.target.files[0];
@@ -283,7 +292,7 @@ SCREENS['admin-model'] = function (root) {
   const add = $('#add-sample', root), rm = $('#rm-sample', root);
   if (add) add.addEventListener('click', () => {
     add.textContent = '만드는 중…'; add.disabled = true;
-    setTimeout(() => { loadSampleCases(); go('admin-model'); toast('가상 사례 120건을 넣었어요 (시연용)'); }, 30);
+    setTimeout(() => { loadSampleCases(); go('admin-model'); toast('가상 사례를 넣었어요 (시연용)'); }, 30);
   });
   if (rm) rm.addEventListener('click', () => { CaseBook.removeSamples(); go('admin-model'); toast('가상 사례를 지웠어요'); });
 };

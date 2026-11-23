@@ -125,12 +125,15 @@ const CaseBook = {
     catch (e) { alert('판단 기록을 저장하지 못했어요. (저장 공간 부족)'); }
   },
   ofKind(kind) { return this.all().filter(c => c.kind === kind); },
-  bySubmission(subId) { return this.all().find(c => c.subId === subId); },
+  // raterId 를 주면 "그 판단자의" 기록만 찾아요 (raters.js 가 켜져 있을 때)
+  bySubmission(subId, raterId) {
+    return this.all().find(c => c.subId === subId && (raterId === undefined || (c.raterId || null) === (raterId || null)));
+  },
 
   // 같은 제출에 대한 판단이 이미 있으면 바꿔요 (보류 → 승인 같은 재판단)
   upsert(rec) {
     const list = this.all().slice();
-    const i = list.findIndex(c => rec.subId && c.subId === rec.subId);
+    const i = list.findIndex(c => rec.subId && c.subId === rec.subId && (c.raterId || null) === (rec.raterId || null));
     if (i >= 0) list[i] = { ...list[i], ...rec, decidedAt: Date.now() };
     else list.push({ id: 'c' + Date.now() + Math.floor(Math.random() * 1000), decidedAt: Date.now(), ...rec });
     this._save(list);
@@ -237,6 +240,13 @@ function crossValidate(X, y) {
 const MIN_CASES = 10;   // 이보다 적으면 확률은 안 보여주고 비슷한 사례만 보여줘요
 const _models = {};
 
+// 학습에 쓸 사례. raters.js 가 켜져 있으면 같은 사례의 여러 판단을 다수결로 합쳐요.
+const ratersOn = () => typeof Rater !== 'undefined' && Rater.on;
+function trainingCases(kind) {
+  const list = CaseBook.ofKind(kind);
+  return ratersOn() ? Rater.consensus(list) : list;
+}
+
 function caseVector(c) {
   return featureVector(c.kind, c.values, c.building, c.photoTags);
 }
@@ -244,7 +254,7 @@ function caseVector(c) {
 function getModel(kind) {
   const m = _models[kind];
   if (m && m.version === CaseBook.version) return m;
-  const cases = CaseBook.ofKind(kind);
+  const cases = trainingCases(kind);
   const X = cases.map(caseVector);
   const y = cases.map(c => DECISIONS.indexOf(c.decision));
   const counts = DECISIONS.map((_, k) => y.filter(v => v === k).length);
@@ -283,7 +293,7 @@ function assistFor(sub, photoTags) {
     const z = m.sc.apply(x);
     out.similar = m.cases
       .map((c, i) => ({ c, d: Math.sqrt(m.sc.apply(m.X[i]).reduce((s, v, j) => s + (v - z[j]) ** 2, 0)) }))
-      .filter(o => o.c.subId !== sub.id)
+      .filter(o => o.c.subId !== sub.id && !(ratersOn() && Rater.itemKey(o.c) === Rater.itemKey(sub)))
       .sort((a, b2) => a.d - b2.d)
       .slice(0, 3);
   }
@@ -317,7 +327,9 @@ function globalImportance(kind) {
 
 // 보조 의견과 실제 판단이 같았던 비율을 10건씩 묶어서 (점점 좋아지는지 보기)
 function agreementCurve() {
-  const list = CaseBook.all().filter(c => c.assistGuess).sort((a, b) => a.decidedAt - b.decidedAt);
+  let list = CaseBook.all().filter(c => c.assistGuess).sort((a, b) => a.decidedAt - b.decidedAt);
+  // 판단자 기능이 켜져 있으면 같은 사례는 한 번만 셉니다 (판단자 수만큼 막대가 늘지 않게)
+  if (ratersOn()) { const seen = new Set(); list = list.filter(c => { const k = Rater.itemKey(c); if (seen.has(k)) return false; seen.add(k); return true; }); }
   const chunks = [];
   for (let i = 0; i < list.length; i += 10) {
     const part = list.slice(i, i + 10);
@@ -347,11 +359,11 @@ function exportJSON() {
 function exportCSV(kind) {
   const names = featureNames(kind);
   const q = s => `"${String(s == null ? '' : s).replace(/"/g, '""')}"`;
-  const head = ['id', '가상사례', '판단시각', '건물', '건물높이m', '벽면면적㎡',
+  const head = ['id', '가상사례', '판단자코드', '판단시각', '건물', '건물높이m', '벽면면적㎡',
     ...AD_TYPES[kind].fields.map(f => f.label), ...names, '법기준_진단', '담당자_판단', '판단이유', '메모', '보조모델_추천'];
   const rows = CaseBook.ofKind(kind).map(c => {
     const b = c.building;
-    return [c.id, c.sample ? 'Y' : 'N', new Date(c.decidedAt).toISOString(), c.buildingName, b.height, b.wallArea,
+    return [c.id, c.sample ? 'Y' : 'N', c.raterId || '', new Date(c.decidedAt).toISOString(), c.buildingName, b.height, b.wallArea,
       ...AD_TYPES[kind].fields.map(f => c.values[f.key]),
       ...caseVector(c).map(v => Math.round(v * 1000) / 1000),
       c.diagnosis, DECISION_LABEL[c.decision],
@@ -442,5 +454,5 @@ function loadSampleCases() {
     }
     prev.push(c);
   });
-  CaseBook._save([...done, ...samples]);
+  CaseBook._save([...done, ...(ratersOn() ? Rater.expandSamples(samples) : samples)]);
 }
