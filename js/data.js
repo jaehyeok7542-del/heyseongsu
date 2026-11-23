@@ -29,7 +29,9 @@ const Store = {
   // 모든 제출 내역 꺼내기 (최신이 위)
   all() {
     try {
-      return JSON.parse(localStorage.getItem(this.KEY) || '[]');
+      // 없어진 광고 종류(예: 예전 현수막) 제출은 건너뛰어요
+      return JSON.parse(localStorage.getItem(this.KEY) || '[]')
+        .filter(s => typeof AD_TYPES === 'undefined' || AD_TYPES[s.kind]);
     } catch (e) {
       return [];
     }

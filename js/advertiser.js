@@ -270,6 +270,9 @@ SCREENS['adv-result'] = function (root) {
         <button class="btn primary wide" id="act">${btn[0]}</button>
       </div>`;
 
+    // 화면을 늦게 그려서 go()가 연결 못 한 뒤로가기 버튼을 여기서 연결해요
+    $$('[data-go]', root).forEach(el => el.addEventListener('click', () => go(el.dataset.go)));
+
     $('#act', root).addEventListener('click', () => {
       if (btn[1] === 'edit') { go('adv-form'); return; }
       // 제출: 구청이 볼 수 있게 저장소에 넣어요 (부적합은 여기까지 오지 않아요)

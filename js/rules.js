@@ -10,6 +10,12 @@
       숫자는 모두 'limit' 같은 이름으로 위쪽에 모아뒀어요.
    ===================================================== */
 
+/* 벽면 이용 간판 기준값 (⚠️ 모두 초안 — 조례·담당자 확인 후 여기 숫자만 고치면 돼요)
+   - 가게 폭 80%, 세로 80cm, 3층 이하, 1업소 1간판: 서울시 간판 가이드라인(2008) 보도 기준
+   - 돌출 30cm: 시행령 표시방법을 소개한 지자체 안내 기준
+   - 최대 가로 10m: 이보다 길면 허가 대상이 되는 기준 */
+const WALL = { shopRatio: 0.8, maxWidth: 10, maxHeight: 80, maxFloor: 3, maxProtrude: 30, maxCount: 1 };
+
 const AD_TYPES = {
   /* ---------------- 입간판 ---------------- */
   sign: {
@@ -46,33 +52,34 @@ const AD_TYPES = {
     },
   },
 
-  /* ---------------- 현수막 ---------------- */
-  banner: {
-    name: '현수막',
-    icon: '🎏',
-    where: '건물 벽면',
+  /* ---------------- 벽면 이용 간판 (가로형) ---------------- */
+  wall: {
+    name: '벽면 이용 간판',
+    icon: '🏷️',
+    where: '건물 벽면 (가로형 간판)',
     fields: [
-      { key: 'width',    label: '가로',            type: 'number', unit: 'm' },
-      { key: 'height',   label: '세로',            type: 'number', unit: 'm' },
-      { key: 'bottom',   label: '현수막 아랫부분의 땅에서 높이', type: 'number', unit: 'm' },
-      { key: 'days',     label: '표시 기간',       type: 'number', unit: '일' },
-      { key: 'selfAd',   label: '자기 가게 광고·행사 내용인가요?', type: 'choice', options: ['예', '아니오'] },
-      { key: 'consent',  label: '건물주 승낙을 받았나요?', type: 'choice', options: ['예', '아니오', '잘 모르겠어요'] },
+      { key: 'width',     label: '간판 가로 길이',            type: 'number', unit: 'm' },
+      { key: 'height',    label: '간판 세로 길이',            type: 'number', unit: 'cm' },
+      { key: 'shopWidth', label: '우리 가게 정면 폭',         type: 'number', unit: 'm' },
+      { key: 'floor',     label: '간판을 다는 층',            type: 'number', unit: '층' },
+      { key: 'protrude',  label: '벽에서 튀어나온 두께',      type: 'number', unit: 'cm' },
+      { key: 'count',     label: '우리 가게 간판 수 (입간판 빼고)', type: 'number', unit: '개' },
+      { key: 'light',     label: '조명은 어떤가요?', type: 'choice', options: ['없음', '조명 있음', '깜빡임·영상'] },
+      { key: 'selfAd',    label: '우리 가게 이름·광고만 담았나요?', type: 'choice', options: ['예', '아니오'] },
     ],
     derived(v) {
-      return { area: v.width * v.height, top: v.bottom + v.height };
+      return { area: v.width * (v.height / 100) };      // ㎡ (참고용)
     },
     checks(v, b) {
-      const d = this.derived(v);
       return [
-        num('가로 길이(세로의 2배 이하)', v.width, 'm', '이하', v.height * 2, true),
-        num('면적(벽면의 1/5 이하)', round2(d.area), '㎡', '이하', round2(b.wallArea / 5), true),
-        num('세로 길이(건물 높이의 1/2 이하)', v.height, 'm', '이하', round2(b.height / 2), true),
-        num('아랫부분 높이', v.bottom, 'm', '이상', 4, true),
-        num('윗부분 높이(건물 높이의 3/4 이하)', round2(d.top), 'm', '이하', round2(b.height * 0.75), true),
-        num('표시 기간(벽면 1년)', v.days, '일', '이하', 365, true),
-        yesno('자기 가게 광고·행사 내용', v.selfAd, '예', '자사광고·행사만 가능', true),
-        yesno('건물주 승낙', v.consent, '예', '승낙 필요', true),
+        num('가로 길이(가게 폭의 80% 이하)', v.width, 'm', '이하', round2(v.shopWidth * WALL.shopRatio), true),
+        num('가로 길이(최대)', v.width, 'm', '이하', WALL.maxWidth, true),
+        num('세로 길이', v.height, 'cm', '이하', WALL.maxHeight, true),
+        num('설치 층', v.floor, '층', '이하', WALL.maxFloor, true),
+        num('벽에서 튀어나온 두께', v.protrude, 'cm', '이하', WALL.maxProtrude, true),
+        num('가게 간판 수(1업소 1간판)', v.count, '개', '이하', WALL.maxCount, true),
+        lightCheck(v.light),
+        yesno('자기 가게 광고만 담음', v.selfAd, '예', '자사광고만 가능', true),
       ];
     },
   },
@@ -103,6 +110,15 @@ function yesno(label, value, want, note, verify) {
   return {
     label, state, verify,
     text: state === 'unknown' ? `내 답: ${value || '입력 안 함'} → 구청 확인 필요` : `내 답: ${value} (${note})`,
+  };
+}
+
+// 조명 규칙: 깜빡이거나 화면이 바뀌면 부적합, 모르면 확인 필요
+function lightCheck(value) {
+  const state = !value ? 'unknown' : value === '깜빡임·영상' ? 'bad' : 'ok';
+  return {
+    label: '조명(깜빡임·영상 금지)', state, verify: true,
+    text: state === 'unknown' ? '입력 안 함 → 구청 확인 필요' : `내 답: ${value}${state === 'bad' ? ' → 깜빡이는 조명은 안 돼요' : ''}`,
   };
 }
 

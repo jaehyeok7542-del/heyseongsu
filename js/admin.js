@@ -251,7 +251,7 @@ SCREENS['admin-model'] = function (root) {
         새 광고가 오면 이 기록으로 다시 학습해서 비슷한 사례와 가능성을 알려줘요.
         <b>판단은 항상 담당자가 해요.</b></p>
 
-      <div class="m-grid">${kindBlock('sign')}${kindBlock('banner')}</div>
+      <div class="m-grid">${Object.keys(AD_TYPES).map(kindBlock).join('')}</div>
 
       ${typeof Rater !== 'undefined' && Rater.on ? Rater.panelHTML() : ''}
 

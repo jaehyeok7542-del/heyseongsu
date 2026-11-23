@@ -269,4 +269,5 @@ body.mode-admin .toast { bottom: 30px; }
 .rater-bar small { color: var(--muted); }
 .rater-bar .link-btn { margin-top: 0; }
 .vs { margin: 6px 0 4px; }
-.vs .prob-row span { min-width: 76px; white-space: nowrap; }
+.vs .prob-row { grid-template-columns: 84px 1fr 44px; } .vs .prob-row span { white-space: nowrap; }
+.vs .prob-row i { background: #eee; }

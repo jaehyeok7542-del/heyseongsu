@@ -64,15 +64,16 @@ const FEATURES = {
     ['보행자 통로 위',             (v)       => unsure(v.walkway)],
     ['자기 가게 광고 아님',        (v)       => (v.selfAd === '아니오' ? 1 : 0)],
   ],
-  banner: [
-    ['가로 ÷ 기준(세로의 2배)',    (v)       => cap(v.width / (2 * v.height))],
-    ['면적 ÷ 기준(벽면의 1/5)',    (v, b, d) => cap(d.area / (b.wallArea / 5))],
-    ['세로 ÷ 기준(건물 높이 1/2)', (v, b)    => cap(v.height / (b.height / 2))],
-    ['아랫부분 높이 부족(4m ÷ 값)', (v)      => cap(4 / Math.max(v.bottom, 0.1))],
-    ['윗부분 ÷ 기준(건물 높이 3/4)', (v, b, d) => cap(d.top / (b.height * 0.75))],
-    ['표시 기간 ÷ 1년',           (v)       => cap(v.days / 365)],
-    ['자기 가게·행사 아님',        (v)       => (v.selfAd === '아니오' ? 1 : 0)],
-    ['건물주 승낙 없음·불명',      (v)       => (v.consent === '예' ? 0 : v.consent === '아니오' ? 1 : 0.5)],
+  wall: [
+    ['가로 ÷ 기준(가게 폭의 80%)',  (v)       => cap(v.width / (v.shopWidth * WALL.shopRatio))],
+    ['가로 ÷ 최대(10m)',           (v)       => cap(v.width / WALL.maxWidth)],
+    ['세로 ÷ 기준(80cm)',          (v)       => cap(v.height / WALL.maxHeight)],
+    ['설치 층 ÷ 기준(3층)',        (v)       => cap(v.floor / WALL.maxFloor)],
+    ['튀어나온 두께 ÷ 기준(30cm)', (v)       => cap(v.protrude / WALL.maxProtrude)],
+    ['간판 수 ÷ 기준',             (v)       => cap(v.count / WALL.maxCount)],
+    ['조명 사용',                  (v)       => (v.light && v.light !== '없음' ? 1 : 0)],
+    ['깜빡임·영상',                (v)       => (v.light === '깜빡임·영상' ? 1 : 0)],
+    ['자기 가게 광고 아님',        (v)       => (v.selfAd === '아니오' ? 1 : 0)],
   ],
 };
 
@@ -116,6 +117,7 @@ const CaseBook = {
     if (this._cache) return this._cache;
     try { this._cache = JSON.parse(localStorage.getItem(this.KEY) || '[]'); }
     catch (e) { this._cache = []; }
+    this._cache = this._cache.filter(c => AD_TYPES[c.kind]);   // 없어진 광고 종류(예: 예전 현수막) 기록은 건너뛰어요
     return this._cache;
   },
   _save(list) {
@@ -391,7 +393,7 @@ function makeSampleCases(count = 60) {
   const out = [];
 
   for (let i = 0; i < count * 2; i++) {
-    const kind = i % 2 ? 'banner' : 'sign';
+    const kind = i % 2 ? 'wall' : 'sign';
     const b = pick(BUILDINGS);
     let v;
     if (kind === 'sign') {
@@ -401,11 +403,11 @@ function makeSampleCases(count = 60) {
         walkway: r() < 0.08 ? '예' : r() < 0.1 ? '잘 모르겠어요' : '아니오', selfAd: r() < 0.08 ? '아니오' : '예',
       };
     } else {
-      const h = between(0.6, 2.2, 0.1);
+      const shop = between(4, 10, 0.5);
       v = {
-        width: Math.round(h * between(1.2, 2.4, 0.1) * 10) / 10, height: h, bottom: between(3.5, 7, 0.5),
-        days: pick([15, 30, 90, 180, 365, 365, 400]), selfAd: r() < 0.08 ? '아니오' : '예',
-        consent: r() < 0.12 ? '잘 모르겠어요' : r() < 0.06 ? '아니오' : '예',
+        width: Math.round(shop * between(0.5, 0.92, 0.02) * 10) / 10, height: between(40, 95, 5), shopWidth: shop,
+        floor: pick([1, 1, 1, 1, 1, 2, 2, 3, 3, 4]), protrude: between(5, 35, 5), count: r() < 0.12 ? 2 : 1,
+        light: r() < 0.07 ? '깜빡임·영상' : r() < 0.65 ? '조명 있음' : '없음', selfAd: r() < 0.06 ? '아니오' : '예',
       };
     }
     const tags = PHOTO_TAGS.map(t => t[0]).filter(t => r() < (t === 'harmony' ? 0.25 : 0.1));
@@ -416,7 +418,7 @@ function makeSampleCases(count = 60) {
     const worst = Math.max(...fv.filter(x => x > 0 && x <= 3));
 
     let decision, reasons = [];
-    if (yes(v.walkway) || yes(v.electric) || tags.includes('block')) { decision = 'reject'; reasons = ['walk']; }
+    if (yes(v.walkway) || yes(v.electric) || v.light === '깜빡임·영상' || tags.includes('block')) { decision = 'reject'; reasons = ['walk']; }
     else if (bad.length && worst > 1.2) { decision = 'reject'; reasons = ['size']; }
     else if (bad.length) { decision = tags.includes('harmony') && r() < 0.6 ? 'approve' : 'hold'; reasons = decision === 'hold' ? ['size'] : []; }
     else if (tags.includes('loud') || tags.includes('clutter')) { decision = 'hold'; reasons = ['design']; }
@@ -440,8 +442,8 @@ function makeSampleCases(count = 60) {
 function loadSampleCases() {
   const samples = makeSampleCases();
   const done = CaseBook.all().filter(c => !c.sample);
-  const byKind = { sign: [], banner: [] };
-  let model = { sign: null, banner: null };
+  const byKind = { sign: [], wall: [] };
+  let model = { sign: null, wall: null };
   samples.forEach((c, i) => {
     const prev = byKind[c.kind];
     if (prev.length >= MIN_CASES && prev.length % 5 === 0) {
